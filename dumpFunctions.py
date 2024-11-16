@@ -2,6 +2,7 @@ import idautils             # type: ignore
 import ida_hexrays as ida   # type: ignore 
 import idaapi               # type: ignore
 import ida_funcs as idc     # type: ignore
+import ida_xref             # type: ignore
 import json
 import re
 
@@ -12,6 +13,49 @@ def get_string_refs(decompilation):
 
 def get_function_base(addr):
     return idaapi.get_func(addr).start_ea if idaapi.get_func(addr) else addr
+
+# def get_xrefs_from(ea):
+#     xrefs = []
+#     function = idaapi.get_func(ea)
+#     if not function:
+#         return xrefs
+    
+#     # check all instruction of the function, and if its a call.
+#     for head in idautils.Heads(function.start_ea, function.end_ea):
+#         if idaapi.is_call_insn(head):
+#             for ref in idautils.XrefsFrom(head, 0):
+#                 if ref.type in [ida_xref.fl_CN, ida_xref.fl_CF]:
+#                     target_func = idaapi.get_func(ref.to)
+#                     if target_func:
+#                         xrefs.append(hex(target_func.start_ea))
+    
+#     return list(set(xrefs))
+
+def get_xrefs_from(ea):
+    xrefs = []
+    func = idaapi.get_func(ea)
+    if not func:
+        return xrefs
+    
+    try:
+        # check all instruction of the function, and if its a call.
+        for head in idautils.Heads(func.start_ea, func.end_ea):
+            if not idaapi.is_code(idaapi.get_full_flags(head)):
+                continue
+            try:
+                if idaapi.is_call_insn(head):
+                    for ref in idautils.XrefsFrom(head, 0):
+                        if ref.type in [ida_xref.fl_CN, ida_xref.fl_CF]:
+                            target_func = idaapi.get_func(ref.to)
+                            if target_func:
+                                xrefs.append(hex(target_func.start_ea))
+            except:
+                continue
+    except:
+        pass
+    
+    return list(set(xrefs))
+
 
 def dump_function(function_ea):
     try:
@@ -26,7 +70,7 @@ def dump_function(function_ea):
                 'decompilation' : function_decomp,
                 'strings' : [string for string in get_string_refs(function_decomp)],
                 'xrefs_to' : [hex(get_function_base(xref.frm)) for xref in list(idautils.XrefsTo(function_ea))],
-                'xrefs_from' : [hex(get_function_base(xref.frm)) for xref in list(idautils.XrefsFrom(function_ea))]
+                'xrefs_from' : get_xrefs_from(function_ea)
             }
         return function_dump
     
