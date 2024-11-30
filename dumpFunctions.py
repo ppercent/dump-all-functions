@@ -64,8 +64,10 @@ def dump_function(function_ea):
         function_decomp = str(ida.decompile(function_ea))
 
         if function_decomp:
+            matches = re.findall(r'[\w]+?::[\w]+?(?=\()', function_decomp.split('\n')[0])
+            match_name = function_name if not matches else matches[0]
             function_dump = {
-                'name' : function_name,
+                'name' : match_name,
                 'address' : function_addr,
                 'decompilation' : function_decomp,
                 'strings' : [string for string in get_string_refs(function_decomp)],
