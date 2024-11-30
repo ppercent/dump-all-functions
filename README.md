@@ -1,5 +1,5 @@
 # dump-all-functions
-IDA script to dump decompilation of every functions
+IDA script to dump decompilation, xrefs, signature, strings, name, address of every functions
 
 ## To do list
 - ~~Fix retrieving xrefs_from (currently not working)~~
